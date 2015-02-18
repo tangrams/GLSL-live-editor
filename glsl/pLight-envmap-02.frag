@@ -11,6 +11,9 @@ uniform vec2 u_tex0resolution;
 uniform sampler2D u_tex1;
 uniform vec2 u_tex1resolution;
 
+uniform sampler2D u_tex2;
+uniform vec2 u_tex2resolution;
+
 // LIGHT Functions and Structs
 struct Light { vec3 ambient, diffuse, specular; };
 struct PointLight { Light emission; vec3 position; };
@@ -87,8 +90,8 @@ Light l = Light(vec3(0.0),vec3(0.0),vec3(0.0));
 Material m = Material(Light(vec3(0.8),vec3(0.8),vec3(0.4)),vec3(0.0),20.0);
 
 // Lights
-PointLight a = PointLight(Light(vec3(0.5),vec3(0.0,0.5,0.8),vec3(0.0,1.0,1.0)),vec3(1.0));
-PointLight b = PointLight(Light(vec3(0.5),vec3(0.8,0.5,0.0),vec3(1.0,1.0,0.0)),vec3(1.0));
+PointLight a = PointLight(Light(vec3(0.5),vec3(0.8),vec3(1.0)),vec3(1.0));
+PointLight b = PointLight(Light(vec3(0.5),vec3(0.8),vec3(1.0)),vec3(1.0));
 
 void main(){
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
@@ -106,6 +109,12 @@ void main(){
     if(u_tex1resolution != vec2(0.0)){
         float aspect = u_tex1resolution.x/u_tex1resolution.y;
         m.bounce.ambient = calculateSEM(u_tex1,normal);
+    }
+    
+    // Load diffuse if there is one
+    if(u_tex2resolution != vec2(0.0)){
+        float aspect = u_tex1resolution.x/u_tex2resolution.y;
+        m.bounce.diffuse = calculateSEM(u_tex2,normal);
     }
     
     a.position = vec3(cos(u_time),0.0,sin(u_time))*4.0 ;
