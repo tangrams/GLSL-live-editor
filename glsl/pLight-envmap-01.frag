@@ -38,13 +38,24 @@ vec3 calculate(in Material _material, in Light _light){
     return color;
 }
 
+vec3 calculateSEM(in sampler2D _tex, in vec3 _normal){
+    vec3 r = reflect( _normal, _normal*3.14 );
+    float m = 2. * sqrt( 
+        pow( r.x, 2.1 ) + 
+        pow( r.y, 2.1 ) + 
+        pow( r.z + 1., 2. ) 
+    );
+    vec2 vN = r.xy / m + .5;
+    return texture2D(_tex,1.0-vN).rgb;
+}
+
 // SPHERE functions
 vec3 sphereNormal(vec2 uv) {
     uv = fract(uv)*2.0-1.0; 
     vec3 ret;
     ret.xy = sqrt(uv * uv) * sign(uv);
     ret.z = sqrt(abs(1.0 - dot(ret.xy,ret.xy)));
-    return ret * 0.5 + 0.5;    
+    return ret * 0.5 + 0.5;
 }
 
 vec2 sphereCoords(vec2 _st, float _scale){
@@ -76,8 +87,8 @@ Light l = Light(vec3(0.0),vec3(0.0),vec3(0.0));
 Material m = Material(Light(vec3(0.8),vec3(0.8),vec3(0.4)),vec3(0.0),20.0);
 
 // Lights
-PointLight a = PointLight(Light(vec3(0.1),vec3(0.0,0.5,0.8),vec3(0.0,1.0,1.0)),vec3(1.0));
-PointLight b = PointLight(Light(vec3(0.25),vec3(0.8,0.5,0.0),vec3(1.0,1.0,0.0)),vec3(1.0));
+PointLight a = PointLight(Light(vec3(0.5),vec3(0.0,0.5,0.8),vec3(0.0,1.0,1.0)),vec3(1.0));
+PointLight b = PointLight(Light(vec3(0.5),vec3(0.8,0.5,0.0),vec3(1.0,1.0,0.0)),vec3(1.0));
 
 void main(){
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
@@ -94,7 +105,7 @@ void main(){
     // Load diffuse if there is one
     if(u_tex1resolution != vec2(0.0)){
         float aspect = u_tex1resolution.x/u_tex1resolution.y;
-        m.bounce.diffuse = texture2D(u_tex1, sphereCoords(st*vec2(1.0,aspect),1.0)).rgb;
+        m.bounce.ambient = calculateSEM(u_tex1,normal);
     }
     
     a.position = vec3(cos(u_time),0.0,sin(u_time))*4.0 ;
@@ -107,7 +118,7 @@ void main(){
   
     // turn black the area around the sphere;
     float radius = length( vec2(0.5)-st )*2.0;
-    color = mix(color,vec3(0.0),smoothstep(0.985,1.0,radius));
+    color = mix(color,mix(color,vec3(0.0),1.0-radius*0.2),smoothstep(0.99,1.0,radius));
   
     gl_FragColor = vec4(color, 1.0);
 }
