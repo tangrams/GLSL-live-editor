@@ -19,6 +19,4 @@ Note: in case you have Python 3.x as your default version you should use ```pyth
 
 [```http://localhost:8000/#glsl/pLight-envmap.frag```](index.html#glsl/pLight-envmap.frag)
 
-[```
-http://localhost:8000/#glsl/pLight-normalmap.frag&imgs/normal-0001.jpg
-```](index.html#glsl/pLight-normalmap.frag&imgs/normal-0001.jpg)
+[```http://localhost:8000/#glsl/pLight-normalmap.frag&imgs/normal-0001.jpg```](index.html#glsl/pLight-normalmap.frag&imgs/normal-0001.jpg)
