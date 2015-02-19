@@ -1,3 +1,6 @@
+// Created by patricio gonzalez vivo - 2015
+// http://shiny.ooo/~patriciogv/
+
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -38,6 +41,55 @@ vec3 calculate(in Material _material, in Light _light){
     return color;
 }
 
+vec3 rim (in vec3 _normal, in float _pct) {
+    float cosTheta = abs( dot( vec3(0.0,0.0,-1.0) , _normal));
+    return vec3( _pct * ( 1. - smoothstep( 0.0, 1., cosTheta ) ) );
+}
+
+// Effects
+vec2 barrelDistortion(vec2 coord, float amt) {
+    vec2 cc = coord - 0.5;
+    float dist = dot(cc, cc);
+    return coord + cc * dist * amt;
+}
+
+float sat( float t ){
+    return clamp( t, 0.0, 1.0 );
+}
+
+float linterp( float t ) {
+    return sat( 1.0 - abs( 2.0*t - 1.0 ) );
+}
+
+float remap( float t, float a, float b ) {
+    return sat( (t - a) / (b - a) );
+}
+
+vec3 spectrum_offset( float t ) {
+    vec3 ret;
+    float lo = step(t,0.5);
+    float hi = 1.0-lo;
+    float w = linterp( remap( t, 1.0/6.0, 5.0/6.0 ) );
+    ret = vec3(lo,1.0,hi) * vec3(1.0-w, w, 1.0-w);
+    
+    return pow( ret, vec3(1.0/2.2) );
+}
+
+const int num_iter = 12;
+const float reci_num_iter_f = 1.0 / float(num_iter);
+
+vec3 chromaAb( in sampler2D _tex, vec2 _pos, float _amount ){
+    vec3 sumcol = vec3(0.0);
+    vec3 sumw = vec3(0.0);
+    for ( int i=0; i<num_iter;++i ){
+        float t = float(i) * reci_num_iter_f;
+        vec3 w = spectrum_offset( t );
+        sumw += w;
+        sumcol += w * texture2D(_tex, barrelDistortion(_pos, _amount*t ) ).rgb;
+    }
+    return sumcol.rgb / sumw;
+}
+
 vec3 calculateSEM(in sampler2D _tex, in vec3 _normal){
     vec3 r = reflect( _normal, _normal*3.14 );
     float m = 2. * sqrt( 
@@ -46,7 +98,7 @@ vec3 calculateSEM(in sampler2D _tex, in vec3 _normal){
         pow( r.z + 1., 2. ) 
     );
     vec2 vN = r.xy / m + .5;
-    return texture2D(_tex,1.0-vN).rgb;
+    return chromaAb(_tex,1.0-vN, 1.5 ).rgb;
 }
 
 // SPHERE functions
@@ -87,8 +139,8 @@ Light l = Light(vec3(0.0),vec3(0.0),vec3(0.0));
 Material m = Material(Light(vec3(0.8),vec3(0.8),vec3(0.4)),vec3(0.0),20.0);
 
 // Lights
-PointLight a = PointLight(Light(vec3(0.5),vec3(0.0,0.5,0.8),vec3(0.0,1.0,1.0)),vec3(1.0));
-PointLight b = PointLight(Light(vec3(0.5),vec3(0.8,0.5,0.0),vec3(1.0,1.0,0.0)),vec3(1.0));
+PointLight a = PointLight(Light(vec3(0.5),vec3(0.3,0.6,0.6),vec3(0.5)),vec3(1.0));
+PointLight b = PointLight(Light(vec3(0.5),vec3(0.6,0.6,0.3),vec3(0.5)),vec3(1.0));
 
 void main(){
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
@@ -99,13 +151,15 @@ void main(){
     // Load normalmap if there is one
     if(u_tex0resolution != vec2(0.0)){
         vec3 normalmap = texture2D(u_tex0, fract(sphereCoords(st, 2.0))).rgb*2.0-1.0;
-        normal = reflect( normal, normalize(normalmap) );
+//         normal = reflect( normal, normalize(normalmap) );
+        normal = normalize(normal+normalmap);
     }
 
     // Load diffuse if there is one
     if(u_tex1resolution != vec2(0.0)){
         float aspect = u_tex1resolution.x/u_tex1resolution.y;
         m.bounce.ambient = calculateSEM(u_tex1,normal);
+        m.bounce.diffuse = calculateSEM(u_tex1,normal);
     }
     
     a.position = vec3(cos(u_time),0.0,sin(u_time))*4.0 ;
@@ -115,6 +169,7 @@ void main(){
     computeLight(b,m,normal,l);
   
     color = calculate(m,l);
+    color += rim(normal, 0.2);
   
     // turn black the area around the sphere;
     float radius = length( vec2(0.5)-st )*2.0;

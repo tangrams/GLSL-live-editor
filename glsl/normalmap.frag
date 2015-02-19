@@ -1,3 +1,6 @@
+// Created by patricio gonzalez vivo - 2015
+// http://shiny.ooo/~patriciogv/
+
 #ifdef GL_ES
 precision mediump float;
 #endif
