@@ -11,10 +11,10 @@ uniform vec2 u_resolution;
 uniform float u_time;
 
 uniform sampler2D u_tex0;
-uniform vec2 u_tex0resolution;
+uniform vec2 u_tex0Resolution;
 
 uniform sampler2D u_tex1;
-uniform vec2 u_tex1resolution;
+uniform vec2 u_tex1Resolution;
 
 vec3 sphere(vec2 uv) {
     uv = fract(uv)*2.0-1.0; 

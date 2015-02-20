@@ -9,10 +9,10 @@ uniform vec2 u_resolution;
 uniform float u_time;
 
 uniform sampler2D u_tex0;
-uniform vec2 u_tex0resolution;
+uniform vec2 u_tex0Resolution;
 
 uniform sampler2D u_tex1;
-uniform vec2 u_tex1resolution;
+uniform vec2 u_tex1Resolution;
 
 // LIGHT Functions and Structs
 struct Light { vec3 ambient, diffuse, specular; };
@@ -136,11 +136,11 @@ vec2 sphereCoords(vec2 _st, float _scale){
 Light l = Light(vec3(0.0),vec3(0.0),vec3(0.0)); 
 
 //  Material
-Material m = Material(Light(vec3(0.8),vec3(0.8),vec3(0.4)),vec3(0.0),20.0);
+Material m = Material(Light(vec3(0.8),vec3(0.8),vec3(0.2)),vec3(0.0),20.0);
 
 // Lights
-PointLight a = PointLight(Light(vec3(0.5),vec3(0.3,0.6,0.6),vec3(0.5)),vec3(1.0));
-PointLight b = PointLight(Light(vec3(0.5),vec3(0.6,0.6,0.3),vec3(0.5)),vec3(1.0));
+PointLight a = PointLight(Light(vec3(0.1),vec3(0.3,0.6,0.6),vec3(0.5)),vec3(1.0));
+PointLight b = PointLight(Light(vec3(0.1),vec3(0.6,0.6,0.3),vec3(0.5)),vec3(1.0));
 
 void main(){
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
@@ -149,15 +149,15 @@ void main(){
     vec3 normal = normalize(sphereNormal(st)*2.0-1.0);
 
     // Load normalmap if there is one
-    if(u_tex0resolution != vec2(0.0)){
+    if(u_tex0Resolution != vec2(0.0)){
         vec3 normalmap = texture2D(u_tex0, fract(sphereCoords(st, 2.0))).rgb*2.0-1.0;
 //         normal = reflect( normal, normalize(normalmap) );
         normal = normalize(normal+normalmap);
     }
 
     // Load diffuse if there is one
-    if(u_tex1resolution != vec2(0.0)){
-        float aspect = u_tex1resolution.x/u_tex1resolution.y;
+    if(u_tex1Resolution != vec2(0.0)){
+        float aspect = u_tex1Resolution.x/u_tex1Resolution.y;
         m.bounce.ambient = calculateSEM(u_tex1,normal);
         m.bounce.diffuse = calculateSEM(u_tex1,normal);
     }

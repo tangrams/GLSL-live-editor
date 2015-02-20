@@ -442,7 +442,7 @@ function renderShader( _billboard ) {
 	for (var i = 0; i < _billboard.textures.length; ++i){
 
 		_billboard.gl.uniform1i( _billboard.gl.getUniformLocation( _billboard.program, "u_tex"+i), i);
-		_billboard.gl.uniform2f( _billboard.gl.getUniformLocation( _billboard.program, "u_tex"+i+"resolution"), 
+		_billboard.gl.uniform2f( _billboard.gl.getUniformLocation( _billboard.program, "u_tex"+i+"Resolution"), 
 								 _billboard.textures[i].image.width,
 								 _billboard.textures[i].image.height);
 
