@@ -5,7 +5,10 @@
 precision mediump float;
 #endif
 
+const float PI = 3.1415926535897932384626433832795;
+
 uniform vec2 u_resolution;
+uniform vec2 u_mouse;
 uniform float u_time;
 
 uniform sampler2D u_tex0;
@@ -103,12 +106,12 @@ vec3 chromaAb( in sampler2D _tex, vec2 _pos, float _amount ){
         float t = float(i) * reci_num_iter_f;
         vec3 w = spectrum_offset( t );
         sumw += w;
-        sumcol += w * texture2D(_tex, barrelDistortion(_pos, _amount*t ) ).rgb;
+        sumcol += w * texture2D(_tex, barrelDistortion(_pos, _amount*t )).rgb;
     }
     return sumcol.rgb / sumw;
 }
 
-vec3 calculateSEM(in sampler2D _tex, in vec3 _normal){
+vec3 calculateSEM(in sampler2D _tex, in vec3 _normal, float _chroma){
     vec3 r = reflect( _normal, _normal*3.14 );
     float m = 2. * sqrt( 
         pow( r.x, 2.1 ) + 
@@ -116,7 +119,13 @@ vec3 calculateSEM(in sampler2D _tex, in vec3 _normal){
         pow( r.z + 1., 2. ) 
     );
     vec2 vN = r.xy / m + .5;
-    return chromaAb(_tex,1.0-vN, 1.5 ).rgb;
+
+    if(_chroma > 0.0){
+        return chromaAb(_tex,1.0-vN, 1.5 ).rgb;
+    } else {
+        return texture2D(_tex,1.0-vN ).rgb;
+    }
+    
 }
 
 // SPHERE functions
@@ -157,11 +166,17 @@ Light l = Light(vec3(0.0),vec3(0.0),vec3(0.0));
 Material m = Material(Light(vec3(0.8),vec3(0.8),vec3(0.2)),vec3(0.0),2.0);
 
 // Lights
-DirectionalLight a = DirectionalLight(Light(vec3(0.1),vec3(0.3,0.6,0.6),vec3(1.0)),vec3(1.0));
-PointLight b = PointLight(Light(vec3(0.1),vec3(0.6,0.6,0.3),vec3(0.5)),vec3(1.0));
+DirectionalLight a = DirectionalLight(Light(vec3(0.1),vec3(0.3),vec3(1.0)),vec3(1.0));
+PointLight b = PointLight(Light(vec3(0.1),vec3(1.0),vec3(0.5)),vec3(1.0));
 
 void main(){
-    vec2 st = gl_FragCoord.xy/u_resolution.xy;
+    vec2 st = gl_FragCoord.xy/u_resolution.xy-0.5;
+    st.x*=u_resolution.x/u_resolution.y;
+    vec2 mouse = u_mouse.xy/u_resolution.xy;
+    mouse.x *= u_resolution.x/u_resolution.y;
+
+    st += 0.5;
+    
     vec3 color = vec3(0.0);
 
     vec3 normal = normalize(sphereNormal(st)*2.0-1.0);
@@ -169,29 +184,29 @@ void main(){
 
     // Load normalmap if there is one
     if(u_tex0Resolution != vec2(0.0)){
-        vec3 normalmap = texture2D(u_tex0, fract(sphereCoords(st, 2.0))).rgb*2.0-1.0;
+        vec3 normalmap = texture2D(u_tex0, fract(sphereCoords(st, 2.0))+mouse*-1.0 ).rgb*2.0-1.0;
         normal = normalize(normal+normalmap);
     }
 
     // Load diffuse if there is one
     if(u_tex1Resolution != vec2(0.0)){
-        float aspect = u_tex1Resolution.x/u_tex1Resolution.y;
-        m.bounce.ambient = calculateSEM(u_tex1,normal);
-        m.bounce.diffuse = calculateSEM(u_tex1,normal);
+        m.bounce.ambient = calculateSEM(u_tex1,normal,0.0);
+        m.bounce.diffuse = calculateSEM(u_tex1,normal,1.);
+        m.bounce.specular = calculateSEM(u_tex1,normal,2.);
     }
     
     a.direction = vec3(cos(u_time),0.0,sin(u_time));
     computeLight(a,m,pos,normal,l);
   
     b.position = vec3(-cos(u_time*0.25),cos(u_time*0.5),sin(u_time*0.5))*2.0;
-    // computeLight(b,m,pos,normal,l);
+    computeLight(b,m,pos,normal,l);
   
     color = calculate(m,l);
     color += rim(normal, 0.5);
   
     // turn black the area around the sphere;
     float radius = length( vec2(0.5)-st )*2.0;
-    color = mix(color,mix(color,vec3(0.0),1.0-radius*0.2),smoothstep(0.99,1.0,radius));
+    color = mix(color,vec3(0.0),smoothstep(0.99,1.0,radius));
   
     gl_FragColor = vec4(color, 1.0);
 }

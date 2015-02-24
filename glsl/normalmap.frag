@@ -16,29 +16,39 @@ uniform vec2 u_tex0Resolution;
 uniform sampler2D u_tex1;
 uniform vec2 u_tex1Resolution;
 
-vec3 sphere(vec2 uv) {
-    uv = fract(uv)*2.0-1.0; 
-    vec3 ret;
-    ret.xy = sqrt(uv * uv) * sign(uv);
-    ret.z = sqrt(abs(1.0 - dot(ret.xy,ret.xy)));
-    ret = ret * 0.5 + 0.5;    
-    return mix(vec3(0.0), ret, smoothstep(1.0,0.98,dot(uv,uv)) );
-}
-
+// LIGHT Functions and Structs
 struct Light { vec3 ambient, diffuse, specular; };
+struct DirectionalLight { Light emission; vec3 direction; };
 struct PointLight { Light emission; vec3 position; };
 struct Material { Light bounce; vec3 emission; float shininess;};
 
-void computeLight(in PointLight _light,in Material _material, in vec3 _normal, inout Light _accumulator ){
-    vec3 lightDirection = normalize(_light.position);
+void computeLight(in DirectionalLight _light, in Material _material, in vec3 _pos, in vec3 _normal, inout Light _accumulator ){
     _accumulator.ambient += _light.emission.ambient;
-    float diffuseFactor = max(0.0,dot(-lightDirection,_normal));
+
+    float diffuseFactor = max(0.0,dot(_normal,-_light.direction));
     _accumulator.diffuse += _light.emission.diffuse * diffuseFactor;
+
     if (diffuseFactor > 0.0) {
-        float specularFactor = max(0.0,pow(diffuseFactor, _material.shininess));
-        if (specularFactor > 0.0) {
-            _accumulator.specular += _light.emission.specular * specularFactor;
-        }
+        vec3 reflectVector = reflect(_light.direction, _normal);
+        float specularFactor = max(0.0,pow( dot(normalize(_pos), reflectVector), _material.shininess));
+        _accumulator.specular += _light.emission.specular * specularFactor;
+    }
+
+}
+
+void computeLight(in PointLight _light, in Material _material, in vec3 _pos, in vec3 _normal, inout Light _accumulator ){
+    float dist = length(_light.position - _pos);
+    vec3 lightDirection = (_light.position - _pos)/dist;
+
+    _accumulator.ambient += _light.emission.ambient;
+
+    float diffuseFactor = max(0.0,dot(lightDirection,_normal));
+    _accumulator.diffuse += _light.emission.diffuse * diffuseFactor;
+
+    if (diffuseFactor > 0.0) {
+        vec3 reflectVector = reflect(-lightDirection, _normal);
+        float specularFactor = max(0.0,pow( dot(-normalize(_pos), reflectVector), _material.shininess));
+        _accumulator.specular += _light.emission.specular * specularFactor;
     }
 }
 
@@ -51,8 +61,13 @@ vec3 calculate(in Material _material, in Light _light){
     return color;
 }
 
+vec3 rim (in vec3 _normal, in float _pct) {
+    float cosTheta = abs( dot( vec3(0.0,0.0,-1.0) , _normal));
+    return vec3( _pct * ( 1. - smoothstep( 0.0, 1., cosTheta ) ) );
+}
+
 //  Light accumulator
-Light l; 
+Light l = Light(vec3(0.0),vec3(0.0),vec3(0.0)); 
 
 //  Material
 Material m = Material(Light(vec3(0.8),vec3(0.8),vec3(0.4)),vec3(0.0),20.0);
