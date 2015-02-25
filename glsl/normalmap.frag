@@ -151,7 +151,7 @@ void main(){
     vec3 pos = vec3(st*0.5,0.0);
 
     if (u_tex0Resolution != vec2(0.0)) {
-        normal = (texture2D(u_tex0,fract(st*1.5)).rgb*2.0)-1.0;
+        normal = (texture2D(u_tex0,fract(st)).rgb*2.0)-1.0;
         pos += normal*1.0;
     }
 

@@ -199,7 +199,7 @@ void main(){
     // Adding CLOUDS
     //-------------------------------------------------------------
     if(u_tex4Resolution != vec2(0.0)){
-        vec4 clouds = texture2D(u_tex4,texCoord+vec2(fract(u_time*-0.001),0.0) );
+        vec4 clouds = texture2D(u_tex4,vec2(fract(texCoord.x+u_time*-0.001),texCoord.y) );
         color = mix(color+(1.0-clouds.r)*clouds.r, color+clouds.r,brightness);
     }
 
