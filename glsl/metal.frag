@@ -20,7 +20,7 @@ uniform vec2 u_tex1Resolution;
 // LIGHT Functions and Structs
 struct Light { vec3 ambient, diffuse, specular; };
 struct DirectionalLight { Light emission; vec3 direction; };
-struct PointLight { Light emission; vec3 position; };
+struct PointLight { Light emission; vec3 position; float constantAttenuation; float linearAttenuation; float quadraticAttenuation;};
 struct Material { Light bounce; vec3 emission; float shininess;};
 
 void computeLight(in DirectionalLight _light, in Material _material, in vec3 _pos, in vec3 _normal, inout Light _accumulator ){
@@ -41,15 +41,19 @@ void computeLight(in PointLight _light, in Material _material, in vec3 _pos, in 
     float dist = length(_light.position - _pos);
     vec3 lightDirection = (_light.position - _pos)/dist;
 
-    _accumulator.ambient += _light.emission.ambient;
+    float attenuation;
+    attenuation = 1.0 / (_light.constantAttenuation +
+                         _light.linearAttenuation * dist +
+                         _light.quadraticAttenuation * dist * dist);
 
+    _accumulator.ambient += _light.emission.ambient * attenuation;
     float diffuseFactor = max(0.0,dot(lightDirection,_normal));
-    _accumulator.diffuse += _light.emission.diffuse * diffuseFactor;
+    _accumulator.diffuse += _light.emission.diffuse * diffuseFactor * attenuation;
 
     if (diffuseFactor > 0.0) {
         vec3 reflectVector = reflect(-lightDirection, _normal);
         float specularFactor = max(0.0,pow( dot(-normalize(_pos), reflectVector), _material.shininess));
-        _accumulator.specular += _light.emission.specular * specularFactor;
+        _accumulator.specular += _light.emission.specular * specularFactor * attenuation;
     }
 }
 
@@ -62,12 +66,12 @@ vec3 calculate(in Material _material, in Light _light){
     return color;
 }
 
-vec3 rim (in vec3 _normal, in float _pct) {
+vec3 rimLight (in vec3 _normal, in float _pct) {
     float cosTheta = abs( dot( vec3(0.0,0.0,-1.0) , _normal));
     return vec3( _pct * ( 1. - smoothstep( 0.0, 1., cosTheta ) ) );
 }
 
-// Effects
+// SEM with chromaAB
 vec2 barrelDistortion(vec2 coord, float amt) {
     vec2 cc = coord - 0.5;
     float dist = dot(cc, cc);
@@ -167,7 +171,7 @@ Material m = Material(Light(vec3(0.8),vec3(0.8),vec3(0.2)),vec3(0.0),2.0);
 
 // Lights
 DirectionalLight a = DirectionalLight(Light(vec3(0.1),vec3(0.3),vec3(1.0)),vec3(1.0));
-PointLight b = PointLight(Light(vec3(0.1),vec3(1.0),vec3(0.5)),vec3(1.0));
+PointLight b = PointLight(Light(vec3(0.1),vec3(1.0),vec3(0.5)),vec3(1.0),0.0,0.1,0.2);
 
 void main(){
     vec2 st = gl_FragCoord.xy/u_resolution.xy-0.5;
@@ -198,11 +202,11 @@ void main(){
     a.direction = vec3(cos(u_time),0.0,sin(u_time));
     computeLight(a,m,pos,normal,l);
   
-    b.position = vec3(-cos(u_time*0.25),cos(u_time*0.5),sin(u_time*0.5))*2.0;
+    b.position = vec3(-cos(u_time*0.25),cos(u_time*0.5),sin(u_time*0.5))*3.0;
     computeLight(b,m,pos,normal,l);
   
     color = calculate(m,l);
-    color += rim(normal, 0.5);
+    color += rimLight(normal, 0.5);
   
     // turn black the area around the sphere;
     float radius = length( vec2(0.5)-st )*2.0;

@@ -67,12 +67,12 @@ vec3 calculate(in Material _material, in Light _light){
     return color;
 }
 
-vec3 rim (in vec3 _normal, in float _pct) {
+vec3 rimLight (in vec3 _normal, in float _pct) {
     float cosTheta = abs( dot( vec3(0.0,0.0,-1.0) , _normal));
     return vec3( _pct * ( 1. - smoothstep( 0.0, 1., cosTheta ) ) );
 }
 
-// Effects
+// SEM with chromaAB
 vec2 barrelDistortion(vec2 coord, float amt) {
     vec2 cc = coord - 0.5;
     float dist = dot(cc, cc);
@@ -166,7 +166,7 @@ void main(){
     computeLight(pLight,m,pos,normal,l);
     color = calculate(m,l);
 
-    color += rim(normal, 0.1);
+    color += rimLight(normal, 0.1);
 
     gl_FragColor = vec4(color,1.0);
 }
