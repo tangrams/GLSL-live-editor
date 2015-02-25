@@ -6,8 +6,10 @@ precision mediump float;
 #endif
 
 #define PI 3.1415926535
+#define HALF_PI 1.57079632679
 
 uniform vec2 u_resolution;
+uniform vec2 u_mouse;
 uniform float u_time;
 
 uniform sampler2D u_tex0;
@@ -73,13 +75,14 @@ Light l = Light(vec3(0.0),vec3(0.0),vec3(0.0));
 Material m = Material(Light(vec3(0.8),vec3(0.8),vec3(0.4)),vec3(0.0),20.0);
 
 // Lights
-PointLight a = PointLight(Light(vec3(0.1),vec3(0.0,0.0,1.0),vec3(0.0,1.0,1.0)),vec3(1.0));
-PointLight b = PointLight(Light(vec3(0.25),vec3(0.6,0.2,0.0),vec3(1.0,1.0,0.0)),vec3(1.0));
+DirectionalLight a = DirectionalLight(Light(vec3(0.1),vec3(0.0,0.3,0.8),vec3(0.0,0.6,0.8)),vec3(1.0));
+PointLight b = PointLight(Light(vec3(0.1),vec3(0.6,0.2,0.0),vec3(1.0,1.0,0.0)),vec3(1.0));
 
 void main(){
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
     vec3 color = vec3(0.0);
     vec3 normal = vec3(0.0);
+    vec3 pos = vec3(0.0);
 
     if (st.x < 0.5){
         normal = texture2D(u_tex0,st).rgb;
@@ -89,14 +92,19 @@ void main(){
 
     normal -= 0.5;
     normal *= 2.0;
+    pos = normal;
 
-    a.position = normalize(vec3(cos(u_time),0.0,sin(u_time)));
-    computeLight(a,m,normal,l);
-
-    b.position = normalize(vec3(cos(u_time*0.5),sin(u_time*0.1),sin(u_time*0.5)));
-    computeLight(b,m,normal,l);
+    a.direction = vec3(-cos(u_time*0.25),cos(u_time*0.5),sin(u_time*0.5));
+    computeLight(a,m,pos,normal,l);
+  
+    vec2 mouse = u_mouse.xy/u_resolution.xy;
+    mouse *= -2.0;
+    mouse -= 1.0;
+    b.position = vec3(cos(mouse.x*-HALF_PI+HALF_PI),sin(mouse.y*HALF_PI),1.0)*2.0;
+    computeLight(b,m,pos,normal,l);
 
     color = calculate(m,l);
+    color += rim(normal, 0.5);
 
     gl_FragColor = vec4(color,1.0);
 }

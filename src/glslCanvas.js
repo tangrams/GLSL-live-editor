@@ -22,10 +22,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 var timeLoad = Date.now();
-
+var mouse = {x: 0, y: 0};
 var billboards = []; 
-
-
 
 function isPowerOf2(value) {
   return (value & (value - 1)) == 0;
@@ -54,6 +52,14 @@ function loadTexture(_gl, _texture) {
 		_gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR);
 	}
 	_gl.bindTexture(_gl.TEXTURE_2D, null);
+}
+
+function getMousePos(_canvas, _evt) {
+	var rect = _canvas.getBoundingClientRect();
+	return {
+		x: _evt.clientX - rect.left,
+		y: _evt.clientY - rect.top
+	};
 }
 
 function loadShaders() {
@@ -179,11 +185,12 @@ function loadShaders() {
 		}
 		
 		// Assign canvas, gl context, shader, UV/Verts buffers and animate boolean to billboard
-		billboards[i] = {	canvas: canvas , 
+		billboards[i] = {	canvas: canvas, 
 							gl: gl, 
 							program: program,
 							vbo: vbo,
-							textures: textures };
+							textures: textures,
+							mouse: mouse };
 	}
 }
 
@@ -435,6 +442,17 @@ function renderShader( _billboard ) {
 	var timeLocation = _billboard.gl.getUniformLocation(_billboard.program, "u_time");
 	_billboard.gl.uniform1f(timeLocation, time);
 
+	// set the mouse uniform
+	var rect = _billboard.canvas.getBoundingClientRect();
+	if( mouse.x >= rect.left && 
+		mouse.x <= rect.right && 
+		mouse.y >= rect.top &&
+		mouse.y <= rect.bottom){
+
+		var mouseLocation = _billboard.gl.getUniformLocation(_billboard.program, "u_mouse");
+		_billboard.gl.uniform2f(mouseLocation,mouse.x-rect.left,_billboard.canvas.height-mouse.y-rect.top);
+	}
+
 	// set the resolution uniform
 	var resolutionLocation = _billboard.gl.getUniformLocation(_billboard.program, "u_resolution");
 	_billboard.gl.uniform2f(resolutionLocation, _billboard.canvas.width, _billboard.canvas.height);
@@ -454,6 +472,11 @@ function renderShader( _billboard ) {
 	// Draw the rectangle.
 	_billboard.gl.drawArrays(_billboard.gl.TRIANGLES, 0, 6);
 }
+
+document.addEventListener('mousemove', function(e){ 
+    mouse.x = e.clientX || e.pageX; 
+    mouse.y = e.clientY || e.pageY 
+}, false);
 
 /**
  * Provides requestAnimationFrame in a cross browser way.
