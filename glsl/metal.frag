@@ -170,8 +170,8 @@ Light l = Light(vec3(0.0),vec3(0.0),vec3(0.0));
 Material m = Material(Light(vec3(0.8),vec3(0.8),vec3(0.2)),vec3(0.0),2.0);
 
 // Lights
-DirectionalLight a = DirectionalLight(Light(vec3(0.1),vec3(0.3),vec3(1.0)),vec3(1.0));
-PointLight b = PointLight(Light(vec3(0.1),vec3(1.0),vec3(0.5)),vec3(1.0),0.0,0.1,0.2);
+DirectionalLight dLight = DirectionalLight(Light(vec3(0.1),vec3(0.3),vec3(1.0)),vec3(1.0));
+PointLight pLight = PointLight(Light(vec3(0.1),vec3(1.0),vec3(1.0)),vec3(1.0),0.0,0.0,0.2);
 
 void main(){
     vec2 st = gl_FragCoord.xy/u_resolution.xy-0.5;
@@ -199,11 +199,11 @@ void main(){
         m.bounce.specular = calculateSEM(u_tex1,normal,2.);
     }
     
-    a.direction = vec3(cos(u_time),0.0,sin(u_time));
-    computeLight(a,m,pos,normal,l);
+    dLight.direction = vec3(cos(u_time),0.0,sin(u_time));
+    // computeLight(dLight,m,pos,normal,l);
   
-    b.position = vec3(-cos(u_time*0.25),cos(u_time*0.5),sin(u_time*0.5))*3.0;
-    computeLight(b,m,pos,normal,l);
+    pLight.position = normalize(vec3(-cos(u_time*0.25),cos(u_time*0.5),sin(u_time*0.5)))*4.0;
+    computeLight(pLight,m,pos,normal,l);
   
     color = calculate(m,l);
     color += rimLight(normal, 0.5);
