@@ -143,7 +143,7 @@ void main(){
     vec2 texCoord = sphereCoords(st, 1.0);
     float aspect = u_tex0Resolution.y/u_tex0Resolution.x;
     texCoord.x *= aspect;
-    texCoord.x -= mouse.x;
+    texCoord = fract(texCoord.x - mouse.x);
 
     // Set NORMALS
     //------------------------------------------------------------
