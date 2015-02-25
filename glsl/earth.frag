@@ -142,8 +142,7 @@ void main(){
     // Rotate globe texture with mouse interaction
     vec2 texCoord = sphereCoords(st, 1.0);
     float aspect = u_tex0Resolution.y/u_tex0Resolution.x;
-    texCoord.x *= aspect;
-    texCoord = fract(texCoord.x - mouse.x);
+    texCoord.x = fract(texCoord.x*aspect - mouse.x);
 
     // Set NORMALS
     //------------------------------------------------------------
