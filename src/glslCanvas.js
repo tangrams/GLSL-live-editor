@@ -41,7 +41,6 @@ function loadTexture(_gl, _texture) {
 	_gl.bindTexture(_gl.TEXTURE_2D, _texture);
 	_gl.pixelStorei(_gl.UNPACK_FLIP_Y_WEBGL, true);
 	_gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _texture.image);
-
 	if (isPowerOf2(_texture.image.width) && isPowerOf2(_texture.image.height) ) {
 		_gl.generateMipmap(_gl.TEXTURE_2D);
 		_gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.LINEAR);
@@ -139,24 +138,31 @@ function loadShaders() {
 			vbo = billboards[i].vbo;
 		}
 
-		// Load textures
+		// Clean texture
 		var textures = [];
-		var bLoadTextures = list[i].hasAttribute('data-textures');
 
+		// Need to load textures
+		var bLoadTextures = list[i].hasAttribute('data-textures');
 		if ( billboards[i] && billboards[i].textures && bLoadTextures){
 			var nImages = canvas.getAttribute('data-textures').split(',');
+
 			if (nImages.length === billboards[i].textures.length){
+				bLoadTextures = false;
 				for(var j in nImages){
-					if( billboards[i].textures[j].image.getAttribute("src") === nImages[j] ){
-						bLoadTextures = false;
+					if( billboards[i].textures[j].image.getAttribute("src") !== nImages[j] ){
+						bLoadTextures = true;
 						break;
 					}
 				}
 			}
-			textures = billboards[i].textures;
+
+			if (!bLoadTextures){
+				textures = billboards[i].textures;
+			}
 		}
 
 		if( bLoadTextures ){
+			// Clean the texture array
 			while(textures.length > 0) {
 				console.log("Deleting texture: " + (textures.length-1));
 				gl.deleteTexture(textures[textures.length-1]);
@@ -164,7 +170,6 @@ function loadShaders() {
 			}
 
 			var imgList = list[i].getAttribute('data-textures').split(',');
-
 			for(var nImg in imgList){
 				console.log("Loading texture: " + imgList[nImg]);
 
@@ -174,12 +179,11 @@ function loadShaders() {
 				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 0, 255])); // red
 
 				textures[nImg].image = new Image();
-				// textures[nImg].image.onload = function() { loadTexture(gl, textures[nImg]); }
-				textures[nImg].image.onload = function(tex) { 
+				textures[nImg].image.onload = function(_gl,_tex) { 
 					return function() {
-						loadTexture(gl, tex); 
+						loadTexture(_gl, _tex); 
 					};
-				}(textures[nImg]);
+				}(gl,textures[nImg]);
 	  			textures[nImg].image.src = imgList[nImg];
 			}
 		}

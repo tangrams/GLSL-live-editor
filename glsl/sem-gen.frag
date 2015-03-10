@@ -108,15 +108,11 @@ vec3 chromaAb( in sampler2D _tex, vec2 _pos, float _amount ){
     return sumcol.rgb / sumw;
 }
 
-vec3 calculateSEM(in sampler2D _tex, in vec3 _normal){
-    vec3 r = reflect( _normal, _normal*3.14 );
-    float m = 2. * sqrt( 
-        pow( r.x, 2.1 ) + 
-        pow( r.y, 2.1 ) + 
-        pow( r.z + 1., 2. ) 
-    );
-    vec2 vN = r.xy / m + .5;
-    return chromaAb(_tex,1.0-vN, 1.5 ).rgb;
+vec3 getSEM(in sampler2D _tex, in vec3 _normal ) {
+    vec3 r = reflect( _normal, _normal*3.14159265359 );
+    float m = 2. * length(r);
+    vec2 uv = r.xy / m + .5;
+    return chromaAb(_tex, 1.0-uv, 1.5).rgb;
 }
 
 // SPHERE functions
